@@ -19,7 +19,7 @@ type Stream[T Number] struct {
 	len_scalars uint
 }
 
-func as_slice[T Number](stream Stream[T]) []T {
+func As_slice[T Number](stream Stream[T]) []T {
 	return unsafe.Slice(stream.veks, stream.len_scalars)
 }
 
@@ -39,65 +39,79 @@ type Apply_Args_Bool[T Number] struct {
 	a, b Stream[T]
 	c    Stream[bool]
 }
-type Apply_Args_Single[T Number] struct {
-	x, y Stream[T]
+type Apply_Args_Num_Bool[T Number] struct {
+	a Stream[T]
+	b T
+	c Stream[bool]
+}
+type Num_Apply_Args_Bool[T Number] struct {
+	a T
+	b Stream[T]
+	c Stream[bool]
 }
 
-type Op uint
+// supports casts!
+type Apply_Args_Single[T Number, O Number] struct {
+	x Stream[T]
+	y Stream[O]
+}
+
+type Op string
 
 const (
-	Add Op = iota
-	Sub
-	Div
-	Mul
-	Mod
-	Min
-	Max
-	Log
-	Pow
-	// LShift
-	// RShift
-	// SLShift
-	And
-	Or
-	Xor
+	Add Op = "Add"
+	Sub Op = "Sub"
+	Div Op = "Div"
+	Mul Op = "Mul"
+	Mod Op = "Mod"
+	Min Op = "Min"
+	Max Op = "Max"
+	Log Op = "Log"
+	Pow Op = "Pow"
+	//  LShift
+	//  RShift
+	//  SLShift
+	And Op = "And"
+	Or  Op = "Or"
+	Xor Op = "Xor"
 )
 
-type NumType uint
+type NumType string
+
+const (
+	b8  NumType = "bool"
+	u8  NumType = "u8"
+	i8  NumType = "i8"
+	u16 NumType = "u16"
+	i16 NumType = "i16"
+	u32 NumType = "u32"
+	i32 NumType = "i32"
+	u64 NumType = "u64"
+	i64 NumType = "i64"
+	f32 NumType = "f32"
+	f64 NumType = "f64"
+)
 
 type Number interface {
 	bool | uint8 | int8 | uint16 | int16 | uint32 | int32 | uint64 | int64 | float32 | float64
 }
 
-// Unsigned integers
-var apply_vtable_u8 []func(Apply_Args[uint8])
-var apply_vtable_u16 []func(Apply_Args[uint16])
-var apply_vtable_u32 []func(Apply_Args[uint32])
-var apply_vtable_u64 []func(Apply_Args[uint64])
+var lib uintptr
 
-// Signed integers
-var apply_vtable_i8 []func(Apply_Args[int8])
-var apply_vtable_i16 []func(Apply_Args[int16])
-var apply_vtable_i32 []func(Apply_Args[int32])
-var apply_vtable_i64 []func(Apply_Args[int64])
-
-// Floats
-var apply_vtable_f32 []func(Apply_Args[float32])
-var apply_vtable_f64 []func(Apply_Args[float64])
-
-// Bool
-var apply_vtable_bool []func(Apply_Args[bool])
-
+func Register_apply_func[T Number](t NumType, op Op) (apply_func func(Apply_Args[T])) {
+	name := string(op) + "_" + string(t)
+	purego.RegisterLibFunc(&apply_func, lib, name)
+	return
+}
 func Init() {
 	dylib_ext, ok := dylib_ext_map[runtime.GOOS]
 	if !ok {
 		panic(fmt.Errorf("os: %s is not supported", runtime.GOOS))
 	}
 	dylib_name := "libzvek." + dylib_ext
-	lib, err := purego.Dlopen(dylib_name, purego.RTLD_LAZY)
+	var err error
+	lib, err = purego.Dlopen(dylib_name, purego.RTLD_LAZY)
 	if err != nil {
 		panic(err)
 	}
-
-	purego.RegisterLibFunc(&Add_f32, lib, "Add_f32")
 }
