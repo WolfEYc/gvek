@@ -13,14 +13,34 @@ var dylib_ext_map = map[string]string{
 	"linux":  "so",
 }
 
-type Stream struct {
-	veks        unsafe.Pointer
+type Stream[T Number] struct {
+	veks        *T
 	len_veks    uint
 	len_scalars uint
 }
 
-type Apply_Args struct {
-	a, b, c Stream
+func as_slice[T Number](stream Stream[T]) []T {
+	return unsafe.Slice(stream.veks, stream.len_scalars)
+}
+
+type Apply_Args[T Number] struct {
+	a, b, c Stream[T]
+}
+type Num_Apply_Args[T Number] struct {
+	a    T
+	b, c Stream[T]
+}
+type Apply_Args_Num[T Number] struct {
+	a Stream[T]
+	b T
+	c Stream[T]
+}
+type Apply_Args_Bool[T Number] struct {
+	a, b Stream[T]
+	c    Stream[bool]
+}
+type Apply_Args_Single[T Number] struct {
+	x, y Stream[T]
 }
 
 type Op uint
@@ -43,21 +63,30 @@ const (
 	Xor
 )
 
-var Add_f32 func(args *Apply_Args)
+type NumType uint
 
 type Number interface {
-	uint8 | int8 | uint16 | int16 | uint32 | int32 | uint64 | int64 | float32 | float64
-}
-type Floats interface {
-	float32 | float64
-}
-type Signed_Numbers interface {
-	int8 | int16 | int32 | int64 | float32 | float64
+	bool | uint8 | int8 | uint16 | int16 | uint32 | int32 | uint64 | int64 | float32 | float64
 }
 
-func Apply[T Number, OP Op](args *Apply_Args) {
+// Unsigned integers
+var apply_vtable_u8 []func(Apply_Args[uint8])
+var apply_vtable_u16 []func(Apply_Args[uint16])
+var apply_vtable_u32 []func(Apply_Args[uint32])
+var apply_vtable_u64 []func(Apply_Args[uint64])
 
-}
+// Signed integers
+var apply_vtable_i8 []func(Apply_Args[int8])
+var apply_vtable_i16 []func(Apply_Args[int16])
+var apply_vtable_i32 []func(Apply_Args[int32])
+var apply_vtable_i64 []func(Apply_Args[int64])
+
+// Floats
+var apply_vtable_f32 []func(Apply_Args[float32])
+var apply_vtable_f64 []func(Apply_Args[float64])
+
+// Bool
+var apply_vtable_bool []func(Apply_Args[bool])
 
 func Init() {
 	dylib_ext, ok := dylib_ext_map[runtime.GOOS]
