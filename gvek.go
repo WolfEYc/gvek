@@ -37,17 +37,17 @@ type Apply_Args_Num[T Number] struct {
 }
 type Apply_Args_Bool[T Number] struct {
 	a, b Stream[T]
-	c    Stream[bool]
+	c    Stream[uint8]
 }
 type Apply_Args_Num_Bool[T Number] struct {
 	a Stream[T]
 	b T
-	c Stream[bool]
+	c Stream[uint8]
 }
 type Num_Apply_Args_Bool[T Number] struct {
 	a T
 	b Stream[T]
-	c Stream[bool]
+	c Stream[uint8]
 }
 
 // supports casts!
@@ -93,7 +93,7 @@ const (
 )
 
 type Number interface {
-	bool | uint8 | int8 | uint16 | int16 | uint32 | int32 | uint64 | int64 | float32 | float64
+	uint8 | int8 | uint16 | int16 | uint32 | int32 | uint64 | int64 | float32 | float64
 }
 
 var lib uintptr
