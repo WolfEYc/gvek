@@ -13,6 +13,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Download libzvek.so
+      run: |
+        curl -LSsf https://github.com/WolfEYc/zvek/releases/download/0.3.0/libzvek-x86_64-linux-x86_64_v3.tar.gz -o libzvek.tar.gz
+        tar -xzvf libzvek.tar.gz
+      
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
