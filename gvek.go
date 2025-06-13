@@ -3,7 +3,6 @@ package gvek
 import (
 	"fmt"
 	"log"
-	"reflect"
 	"runtime"
 	"slices"
 	"sync"
