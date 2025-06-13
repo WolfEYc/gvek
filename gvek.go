@@ -14,9 +14,43 @@ import (
 // not threadsafe
 type Ctx unsafe.Pointer
 
-// size in bytes for this ctx
+var Make_Ctx func(bytes uint) Ctx
 
-var Make_Ctx func(len uint) Ctx
+const TARGET_SIMD_BYTES = 64
+
+func bool_to_int(b bool) int {
+	// The compiler currently only optimizes this form.
+	// See issue 6011.
+	var i int
+	if b {
+		i = 1
+	} else {
+		i = 0
+	}
+	return i
+}
+func bool_to_uint(b bool) uint {
+	// The compiler currently only optimizes this form.
+	// See issue 6011.
+	var i uint
+	if b {
+		i = 1
+	} else {
+		i = 0
+	}
+	return i
+}
+
+func ceildiv(x uint, y uint) uint {
+	return x/y + bool_to_uint(x%y != 0)
+}
+
+func Make_Ctx_Smart(elem_size uint, slice_len uint, num_slices uint) Ctx {
+	lanes := TARGET_SIMD_BYTES / elem_size
+	slice_padded_len := ceildiv(slice_len, lanes) * lanes
+	bytes := num_slices * slice_padded_len * elem_size
+	return Make_Ctx(bytes)
+}
 
 // reset arena allocator
 var Reset_Ctx func(Ctx)
@@ -56,12 +90,12 @@ func List_active_ctxs() (num_active int) {
 }
 
 func bind_debug_ctx_funcs() {
-	var make_ctx_raw func(len uint) Ctx
+	var make_ctx_raw func(bytes uint) Ctx
 	purego.RegisterLibFunc(&make_ctx_raw, lib, "make_ctx")
-	Make_Ctx = func(len uint) Ctx {
+	Make_Ctx = func(bytes uint) Ctx {
 		var tracker Ctx_Tracker
-		tracker.Size = len
-		tracker.Ctx = make_ctx_raw(len)
+		tracker.Size = bytes
+		tracker.Ctx = make_ctx_raw(bytes)
 		var ok bool
 		_, tracker.File_name, tracker.Line_no, ok = runtime.Caller(1)
 		if !ok {
@@ -86,139 +120,165 @@ func bind_debug_ctx_funcs() {
 }
 
 // starter kit, if you need more then these, register them using Register_apply_func or Register_apply_single_func
-var New_f32 New_Stream_Func[float32]
-var Set_f32 Set_Stream_Func[float32]
-var To_f32 To_Stream_Func[float32]
+var New_f32 func(ctx Ctx, len uint) []float32
 
-var Add_f32 func(*Apply_Args[float32])
-var Sub_f32 func(*Apply_Args[float32])
-var Mul_f32 func(*Apply_Args[float32])
-var Div_f32 func(*Apply_Args[float32])
-var Pow_f32 func(*Apply_Args[float32])
+var Add_f32 func(Apply_Args[float32])
+var Sub_f32 func(Apply_Args[float32])
+var Mul_f32 func(Apply_Args[float32])
+var Div_f32 func(Apply_Args[float32])
+var Pow_f32 func(Apply_Args[float32])
 
 func bind_f32_funcs() {
 	New_f32 = register_new_stream_func[float32](f32)
-	Set_f32 = register_set_stream_func[float32](f32)
-	To_f32 = register_to_stream_func[float32](f32)
 
-	Add_f32 = Register_apply_func[float32, Apply_Args[float32]](f32, Add, Vector, Vector)
-	Sub_f32 = Register_apply_func[float32, Apply_Args[float32]](f32, Sub, Vector, Vector)
-	Mul_f32 = Register_apply_func[float32, Apply_Args[float32]](f32, Mul, Vector, Vector)
-	Div_f32 = Register_apply_func[float32, Apply_Args[float32]](f32, Div, Vector, Vector)
-	Pow_f32 = Register_apply_func[float32, Apply_Args[float32]](f32, Pow, Vector, Vector)
+	Add_f32 = Register_apply_func[float32](f32, Add)
+	Sub_f32 = Register_apply_func[float32](f32, Sub)
+	Mul_f32 = Register_apply_func[float32](f32, Mul)
+	Div_f32 = Register_apply_func[float32](f32, Div)
+	Pow_f32 = Register_apply_func[float32](f32, Pow)
 }
 
-var New_f64 New_Stream_Func[float64]
-var Set_f64 Set_Stream_Func[float64]
-var To_f64 To_Stream_Func[float64]
+var New_f64 func(ctx Ctx, len uint) []float64
 
-var Add_f64 func(*Apply_Args[float64])
-var Sub_f64 func(*Apply_Args[float64])
-var Mul_f64 func(*Apply_Args[float64])
-var Div_f64 func(*Apply_Args[float64])
-var Pow_f64 func(*Apply_Args[float64])
+var Add_f64 func(Apply_Args[float64])
+var Sub_f64 func(Apply_Args[float64])
+var Mul_f64 func(Apply_Args[float64])
+var Div_f64 func(Apply_Args[float64])
+var Pow_f64 func(Apply_Args[float64])
 
 func bind_f64_funcs() {
 	New_f64 = register_new_stream_func[float64](f64)
-	Set_f64 = register_set_stream_func[float64](f64)
-	To_f64 = register_to_stream_func[float64](f64)
 
-	Add_f64 = Register_apply_func[float64, Apply_Args[float64]](f64, Add, Vector, Vector)
-	Sub_f64 = Register_apply_func[float64, Apply_Args[float64]](f64, Sub, Vector, Vector)
-	Mul_f64 = Register_apply_func[float64, Apply_Args[float64]](f64, Mul, Vector, Vector)
-	Div_f64 = Register_apply_func[float64, Apply_Args[float64]](f64, Div, Vector, Vector)
-	Pow_f64 = Register_apply_func[float64, Apply_Args[float64]](f64, Pow, Vector, Vector)
+	Add_f64 = Register_apply_func[float64](f64, Add)
+	Sub_f64 = Register_apply_func[float64](f64, Sub)
+	Mul_f64 = Register_apply_func[float64](f64, Mul)
+	Div_f64 = Register_apply_func[float64](f64, Div)
+	Pow_f64 = Register_apply_func[float64](f64, Pow)
 }
 
-type Stream[T Number] struct {
-	veks        *T
-	len_veks    uint
-	len_scalars uint
-}
-
-func As_slice[T Number](stream Stream[T]) []T {
-	return unsafe.Slice(stream.veks, stream.len_scalars)
-}
-
-type New_Stream_Func[T Number] func(ctx Ctx, len uint) (stream Stream[T])
-type Set_Stream_Func[T Number] func(ctx Ctx, slice []T)
-type To_Stream_Func[T Number] func(ctx Ctx, slice []T) (stream Stream[T])
-
-func register_new_stream_func[T Number](n NumType) (new_stream_func New_Stream_Func[T]) {
+func register_new_stream_func[T Number](n NumType) (new_stream_func func(ctx Ctx, len uint) []T) {
 	name := "New_" + string(n) + "_Stream"
-	purego.RegisterLibFunc(&new_stream_func, lib, name)
-	return
-}
-func register_set_stream_func[T Number](n NumType) (set_stream_func Set_Stream_Func[T]) {
-	name := "Set_" + string(n) + "_Stream"
-	var set_stream_func_raw func(ctx Ctx, ptr *T, len uint)
-	purego.RegisterLibFunc(&set_stream_func_raw, lib, name)
-	set_stream_func = func(ctx Ctx, slice []T) {
-		set_stream_func_raw(ctx, unsafe.SliceData(slice), uint(len(slice)))
-	}
-	return
-}
-
-// just convenience func, it calls new and set stream in the lib internally
-func register_to_stream_func[T Number](n NumType) (to_stream_func To_Stream_Func[T]) {
-	name := "To_" + string(n) + "_Stream"
-	var to_stream_func_raw func(ctx Ctx, ptr *T, len uint) Stream[T]
-	purego.RegisterLibFunc(&to_stream_func_raw, lib, name)
-	to_stream_func = func(ctx Ctx, slice []T) (stream Stream[T]) {
-		stream = to_stream_func_raw(ctx, unsafe.SliceData(slice), uint(len(slice)))
-		return
+	var new_stream_func_raw func(ctx Ctx, len uint) (stream *T)
+	purego.RegisterLibFunc(&new_stream_func_raw, lib, name)
+	new_stream_func = func(ctx Ctx, len uint) []T {
+		stream_raw := new_stream_func_raw(ctx, len)
+		return unsafe.Slice(stream_raw, len)
 	}
 	return
 }
 
 type Apply_Args[T Number] struct {
-	A, B, C Stream[T]
+	A, B, C []T
 }
+type Apply_Args_C[T Number] struct {
+	a, b, c *T
+	len     uint
+}
+
 type Num_Apply_Args[T Number] struct {
 	A    T
-	B, C Stream[T]
+	B, C []T
 }
+type Num_Apply_Args_C[T Number] struct {
+	a    T
+	b, c *T
+	len  uint
+}
+
 type Apply_Args_Num[T Number] struct {
-	A Stream[T]
+	A []T
 	B T
-	C Stream[T]
+	C []T
 }
+type Apply_Args_Num_C[T Number] struct {
+	a   *T
+	b   T
+	c   *T
+	len uint
+}
+
 type Apply_Args_Bool[T Number] struct {
-	A, B Stream[T]
-	C    Stream[uint8]
+	A, B []T
+	C    []uint8
 }
+type Apply_Args_Bool_C[T Number] struct {
+	a, b *T
+	c    *uint8
+	len  uint
+}
+
 type Apply_Args_Num_Bool[T Number] struct {
-	A Stream[T]
+	A []T
 	B T
-	C Stream[uint8]
+	C []uint8
 }
+type Apply_Args_Num_Bool_C[T Number] struct {
+	a *T
+	b T
+	c *uint8
+}
+
 type Num_Apply_Args_Bool[T Number] struct {
 	A T
-	B Stream[T]
-	C Stream[uint8]
+	B []T
+	C []uint8
 }
+type Num_Apply_Args_Bool_C[T Number] struct {
+	a   T
+	b   *T
+	c   *uint8
+	len uint
+}
+
 type Select_Apply_Args[T Number] struct {
-	A, B Stream[T]
-	Pred Stream[uint8]
-	C    Stream[T]
+	A, B []T
+	Pred []uint8
+	C    []T
 }
+type Select_Apply_Args_C[T Number] struct {
+	a, b *T
+	pred *uint8
+	c    *T
+	len  uint
+}
+
 type Num_Select_Apply_Args[T Number] struct {
 	A    T
-	B    Stream[T]
-	Pred Stream[uint8]
-	C    Stream[T]
+	B    []T
+	Pred []uint8
+	C    []T
 }
+type Num_Select_Apply_Args_C[T Number] struct {
+	a    T
+	b    *T
+	pred *uint8
+	c    *T
+	len  uint
+}
+
 type Select_Apply_Args_Num[T Number] struct {
-	A    Stream[T]
+	A    []T
 	B    T
-	Pred Stream[uint8]
-	C    Stream[T]
+	Pred []uint8
+	C    []T
+}
+type Select_Apply_Args_Num_C[T Number] struct {
+	a    *T
+	b    T
+	pred *uint8
+	c    *T
+	len  uint
 }
 
 // supports casts!
 type Apply_Args_Single[T Number, O Number] struct {
-	X Stream[T]
-	Y Stream[O]
+	X []T
+	Y []O
+}
+type Apply_Args_Single_C[T Number, O Number] struct {
+	x   *T
+	y   *O
+	len uint
 }
 
 type Op string
@@ -275,6 +335,19 @@ const (
 	f64 NumType = "f64"
 )
 
+var numtype_to_size = map[NumType]uint{
+	u8:  1,
+	i8:  1,
+	u16: 2,
+	i16: 2,
+	i32: 4,
+	u32: 4,
+	u64: 8,
+	i64: 8,
+	f32: 4,
+	f64: 8,
+}
+
 type Operand_Variant uint
 
 const (
@@ -300,17 +373,166 @@ type Number interface {
 
 var lib uintptr
 
-func Register_apply_func[T Number, AT Apply_Args_Type[T]](t NumType, op Op, a_t Operand_Variant, b_t Operand_Variant) (apply_func func(*AT)) {
-	if a_t == Scalar && b_t == Scalar {
-		log.Panicf("in Register_apply_func, num_type=%s, op=%s, at least one input to apply must be a vector", t, op)
-	}
+func Register_apply_func[T Number](t NumType, op Op) (apply_func func(Apply_Args[T])) {
 	name := string(op) + "_" + string(t)
-	if a_t == Scalar {
-		name = "Num_" + name
-	} else if b_t == Scalar {
-		name = name + "_Num"
+	var c_func func(*Apply_Args_C[T])
+	purego.RegisterLibFunc(&c_func, lib, name)
+	apply_func = func(args Apply_Args[T]) {
+		if len(args.A) != len(args.B) || len(args.B) != len(args.C) {
+			panic("apply func called with slices of differing length")
+		}
+		c_func(&Apply_Args_C[T]{
+			a:   unsafe.SliceData(args.A),
+			b:   unsafe.SliceData(args.B),
+			c:   unsafe.SliceData(args.C),
+			len: uint(len(args.C)),
+		})
 	}
-	purego.RegisterLibFunc(&apply_func, lib, name)
+	return
+}
+func Register_num_apply_func[T Number](t NumType, op Op) (apply_func func(Num_Apply_Args[T])) {
+	name := "Num_" + string(op) + "_" + string(t)
+	var c_func func(*Num_Apply_Args_C[T])
+	purego.RegisterLibFunc(&c_func, lib, name)
+	apply_func = func(args Num_Apply_Args[T]) {
+		if len(args.B) != len(args.C) {
+			panic("Num_Apply_Args: slice lengths differ")
+		}
+		c_func(&Num_Apply_Args_C[T]{
+			a:   args.A,
+			b:   unsafe.SliceData(args.B),
+			c:   unsafe.SliceData(args.C),
+			len: uint(len(args.C)),
+		})
+	}
+	return
+}
+
+func Register_apply_num_func[T Number](t NumType, op Op) (apply_func func(Apply_Args_Num[T])) {
+	name := string(op) + "_" + string(t)
+	var c_func func(*Apply_Args_Num_C[T])
+	purego.RegisterLibFunc(&c_func, lib, name)
+	apply_func = func(args Apply_Args_Num[T]) {
+		if len(args.A) != len(args.C) {
+			panic("Apply_Args_Num: slice lengths differ")
+		}
+		c_func(&Apply_Args_Num_C[T]{
+			a:   unsafe.SliceData(args.A),
+			b:   args.B,
+			c:   unsafe.SliceData(args.C),
+			len: uint(len(args.C)),
+		})
+	}
+	return
+}
+
+func Register_apply_bool_func[T Number](t NumType, op Op) (apply_func func(Apply_Args_Bool[T])) {
+	name := string(op) + "_" + string(t)
+	var c_func func(*Apply_Args_Bool_C[T])
+	purego.RegisterLibFunc(&c_func, lib, name)
+	apply_func = func(args Apply_Args_Bool[T]) {
+		if len(args.A) != len(args.B) || len(args.B) != len(args.C) {
+			panic("Apply_Args_Bool: slice lengths differ")
+		}
+		c_func(&Apply_Args_Bool_C[T]{
+			a:   unsafe.SliceData(args.A),
+			b:   unsafe.SliceData(args.B),
+			c:   unsafe.SliceData(args.C),
+			len: uint(len(args.C)),
+		})
+	}
+	return
+}
+
+func Register_apply_num_bool_func[T Number](t NumType, op Op) (apply_func func(Apply_Args_Num_Bool[T])) {
+	name := string(op) + "_" + string(t) + "_Num"
+	var c_func func(*Apply_Args_Num_Bool_C[T])
+	purego.RegisterLibFunc(&c_func, lib, name)
+	apply_func = func(args Apply_Args_Num_Bool[T]) {
+		if len(args.A) != len(args.C) {
+			panic("Apply_Args_Num_Bool: slice lengths differ")
+		}
+		c_func(&Apply_Args_Num_Bool_C[T]{
+			a: unsafe.SliceData(args.A),
+			b: args.B,
+			c: unsafe.SliceData(args.C),
+		})
+	}
+	return
+}
+
+func Register_num_apply_bool_func[T Number](t NumType, op Op) (apply_func func(Num_Apply_Args_Bool[T])) {
+	name := "Num_" + string(op) + "_" + string(t)
+	var c_func func(*Num_Apply_Args_Bool_C[T])
+	purego.RegisterLibFunc(&c_func, lib, name)
+	apply_func = func(args Num_Apply_Args_Bool[T]) {
+		if len(args.B) != len(args.C) {
+			panic("Num_Apply_Args_Bool: slice lengths differ")
+		}
+		c_func(&Num_Apply_Args_Bool_C[T]{
+			a:   args.A,
+			b:   unsafe.SliceData(args.B),
+			c:   unsafe.SliceData(args.C),
+			len: uint(len(args.C)),
+		})
+	}
+	return
+}
+
+func Register_select_apply_func[T Number](t NumType) (apply_func func(Select_Apply_Args[T])) {
+	name := "Select_" + string(t)
+	var c_func func(*Select_Apply_Args_C[T])
+	purego.RegisterLibFunc(&c_func, lib, name)
+	apply_func = func(args Select_Apply_Args[T]) {
+		if len(args.A) != len(args.B) || len(args.B) != len(args.Pred) || len(args.Pred) != len(args.C) {
+			panic("Select_Apply_Args: slice lengths differ")
+		}
+		c_func(&Select_Apply_Args_C[T]{
+			a:    unsafe.SliceData(args.A),
+			b:    unsafe.SliceData(args.B),
+			pred: unsafe.SliceData(args.Pred),
+			c:    unsafe.SliceData(args.C),
+			len:  uint(len(args.C)),
+		})
+	}
+	return
+}
+
+func Register_num_select_apply_func[T Number](t NumType) (apply_func func(Num_Select_Apply_Args[T])) {
+	name := "Num_Select_" + string(t)
+	var c_func func(*Num_Select_Apply_Args_C[T])
+	purego.RegisterLibFunc(&c_func, lib, name)
+	apply_func = func(args Num_Select_Apply_Args[T]) {
+		if len(args.B) != len(args.Pred) || len(args.Pred) != len(args.C) {
+			panic("Num_Select_Apply_Args: slice lengths differ")
+		}
+		c_func(&Num_Select_Apply_Args_C[T]{
+			a:    args.A,
+			b:    unsafe.SliceData(args.B),
+			pred: unsafe.SliceData(args.Pred),
+			c:    unsafe.SliceData(args.C),
+			len:  uint(len(args.C)),
+		})
+	}
+	return
+}
+
+func Register_select_apply_num_func[T Number](t NumType) (apply_func func(Select_Apply_Args_Num[T])) {
+	name := "Select_" + string(t) + "_Num"
+	var c_func func(*Select_Apply_Args_Num_C[T])
+	purego.RegisterLibFunc(&c_func, lib, name)
+	apply_func = func(args Select_Apply_Args_Num[T]) {
+		if len(args.A) != len(args.Pred) || len(args.Pred) != len(args.C) {
+			panic("Select_Apply_Args_Num: slice lengths differ")
+		}
+		c_func(&Select_Apply_Args_Num_C[T]{
+			a:    unsafe.SliceData(args.A),
+			b:    args.B,
+			pred: unsafe.SliceData(args.Pred),
+			c:    unsafe.SliceData(args.C),
+			len:  uint(len(args.C)),
+		})
+	}
 	return
 }
 func Register_apply_single_func[T Number, O Number](t NumType, o NumType, op Op1) (apply_func func(Apply_Args_Single[T, O])) {
@@ -318,7 +540,18 @@ func Register_apply_single_func[T Number, O Number](t NumType, o NumType, op Op1
 	if t != o {
 		name = name + "_" + string(o)
 	}
-	purego.RegisterLibFunc(&apply_func, lib, name)
+	var c_func func(*Apply_Args_Single_C[T, O])
+	purego.RegisterLibFunc(&c_func, lib, name)
+	apply_func = func(args Apply_Args_Single[T, O]) {
+		if len(args.X) != len(args.Y) {
+			panic("Apply_Args_Single: slice lengths differ")
+		}
+		c_func(&Apply_Args_Single_C[T, O]{
+			x:   unsafe.SliceData(args.X),
+			y:   unsafe.SliceData(args.Y),
+			len: uint(len(args.X)),
+		})
+	}
 	return
 }
 
@@ -338,6 +571,9 @@ func Init(debug bool) {
 	if err != nil {
 		panic(err)
 	}
+	var init_zvek func()
+	purego.RegisterLibFunc(&init_zvek, lib, "init")
+	init_zvek()
 	if debug {
 		bind_debug_ctx_funcs()
 	} else {
