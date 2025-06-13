@@ -3,6 +3,7 @@ package gvek
 import (
 	"fmt"
 	"log"
+	"reflect"
 	"runtime"
 	"slices"
 	"sync"
@@ -156,6 +157,14 @@ func bind_f64_funcs() {
 	Pow_f64 = Register_apply_func[float64](f64, Pow)
 }
 
+func As_bytes[T Number](nums []T) (byte_slice []byte) {
+	ptr_t := unsafe.SliceData(nums)
+	ptr_b := (*byte)(unsafe.Pointer(ptr_t))
+	var fake_element T
+	sizeof_t := unsafe.Sizeof(fake_element)
+	byte_slice = unsafe.Slice(ptr_b, len(nums)*int(sizeof_t))
+	return
+}
 func register_new_stream_func[T Number](n NumType) (new_stream_func func(ctx Ctx, len uint) []T) {
 	name := "New_" + string(n) + "_Stream"
 	var new_stream_func_raw func(ctx Ctx, len uint) (stream *T)
