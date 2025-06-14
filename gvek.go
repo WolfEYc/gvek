@@ -156,12 +156,34 @@ func bind_f64_funcs() {
 	Pow_f64 = Register_apply_func[float64](f64, Pow)
 }
 
+var New_bytes func(ctx Ctx, len uint) []byte
+
+var And_bytes func(Apply_Args[byte])
+var Or_bytes func(Apply_Args[byte])
+var Xor_bytes func(Apply_Args[byte])
+
+func bind_byte_funcs() {
+	New_bytes = register_new_stream_func[byte](u8)
+
+	And_bytes = Register_apply_func[byte](u8, And)
+	Or_bytes = Register_apply_func[byte](u8, Or)
+	Xor_bytes = Register_apply_func[byte](u8, Xor)
+}
+
 func As_bytes[T Number](nums []T) (byte_slice []byte) {
 	ptr_t := unsafe.SliceData(nums)
 	ptr_b := (*byte)(unsafe.Pointer(ptr_t))
 	var fake_element T
 	sizeof_t := unsafe.Sizeof(fake_element)
 	byte_slice = unsafe.Slice(ptr_b, len(nums)*int(sizeof_t))
+	return
+}
+func Bytes_as[T Number](bytes []byte) (nums []T) {
+	ptr_b := unsafe.SliceData(bytes)
+	ptr_t := (*T)(unsafe.Pointer(ptr_b))
+	var fake_element T
+	sizeof_t := unsafe.Sizeof(fake_element)
+	nums = unsafe.Slice(ptr_t, len(bytes)/int(sizeof_t))
 	return
 }
 func register_new_stream_func[T Number](n NumType) (new_stream_func func(ctx Ctx, len uint) []T) {
@@ -342,19 +364,6 @@ const (
 	f32 NumType = "f32"
 	f64 NumType = "f64"
 )
-
-var numtype_to_size = map[NumType]uint{
-	u8:  1,
-	i8:  1,
-	u16: 2,
-	i16: 2,
-	i32: 4,
-	u32: 4,
-	u64: 8,
-	i64: 8,
-	f32: 4,
-	f64: 8,
-}
 
 type Operand_Variant uint
 
@@ -589,4 +598,5 @@ func Init(debug bool) {
 	}
 	bind_f32_funcs()
 	bind_f64_funcs()
+	bind_byte_funcs()
 }
