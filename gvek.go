@@ -44,6 +44,24 @@ func As_bytes[T Number](nums []T) (byte_slice []byte) {
 	byte_slice = unsafe.Slice(ptr_b, len(nums)*int(sizeof_t))
 	return
 }
+func Bytes_as[T Number](byte_slice []byte) (nums []T) {
+	ptr_b := unsafe.SliceData(byte_slice)
+	ptr_t := (*T)(unsafe.Pointer(ptr_b))
+	var fake_element T
+	sizeof_t := unsafe.Sizeof(fake_element)
+	nums = unsafe.Slice(ptr_t, len(byte_slice)/int(sizeof_t))
+	return
+}
+
+var Xor_bytes Apply_Args_Fn[byte]
+var And_bytes Apply_Args_Fn[byte]
+var Or_bytes Apply_Args_Fn[byte]
+
+func bind_byte_funcs() {
+	Xor_bytes = Register_apply_func[byte](u8, Xor)
+	And_bytes = Register_apply_func[byte](u8, And)
+	Or_bytes = Register_apply_func[byte](u8, Or)
+}
 
 type Apply_Args_Fn[T Number] func(c []T, a []T, b []T)
 type Num_Apply_Args_Fn[T Number] func(c []T, a T, b []T)
@@ -403,4 +421,5 @@ func Init() {
 	}
 	bind_f32_funcs()
 	bind_f64_funcs()
+	bind_byte_funcs()
 }
