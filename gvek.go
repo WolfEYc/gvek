@@ -31,6 +31,8 @@ var NumPow_f32 Num_Apply_Args_Fn[float32]
 var CumSum_f32 Apply_Cum_Fn[float32]
 var CumProd_f32 Apply_Cum_Fn[float32]
 
+var Ceil_f32 Apply_Args_Single_Fn[float32, float32]
+
 func bind_f32_funcs() {
 	Add_f32 = Register_apply_func[float32](f32, Add)
 	Sub_f32 = Register_apply_func[float32](f32, Sub)
@@ -54,6 +56,8 @@ func bind_f32_funcs() {
 
 	CumSum_f32 = Register_apply_cum_func[float32](f32, CumSum)
 	CumProd_f32 = Register_apply_cum_func[float32](f32, CumProd)
+
+	Ceil_f32 = Register_apply_single_func[float32, float32](f32, f32, Ceil)
 }
 
 var Add_f64 Apply_Args_Fn[float64]
