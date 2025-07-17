@@ -19,12 +19,17 @@ var SubNum_f32 Apply_Args_Num_Fn[float32]
 var MulNum_f32 Apply_Args_Num_Fn[float32]
 var DivNum_f32 Apply_Args_Num_Fn[float32]
 var PowNum_f32 Apply_Args_Num_Fn[float32]
+var MinNum_f32 Apply_Args_Num_Fn[float32]
+var MaxNum_f32 Apply_Args_Num_Fn[float32]
 
 var NumAdd_f32 Num_Apply_Args_Fn[float32]
 var NumSub_f32 Num_Apply_Args_Fn[float32]
 var NumMul_f32 Num_Apply_Args_Fn[float32]
 var NumDiv_f32 Num_Apply_Args_Fn[float32]
 var NumPow_f32 Num_Apply_Args_Fn[float32]
+
+var CumSum_f32 Apply_Cum_Fn[float32]
+var CumProd_f32 Apply_Cum_Fn[float32]
 
 func bind_f32_funcs() {
 	Add_f32 = Register_apply_func[float32](f32, Add)
@@ -38,12 +43,17 @@ func bind_f32_funcs() {
 	MulNum_f32 = Register_apply_num_func[float32](f32, Mul)
 	DivNum_f32 = Register_apply_num_func[float32](f32, Div)
 	PowNum_f32 = Register_apply_num_func[float32](f32, Pow)
+	MinNum_f32 = Register_apply_num_func[float32](f32, Min)
+	MaxNum_f32 = Register_apply_num_func[float32](f32, Max)
 
 	NumAdd_f32 = Register_num_apply_func[float32](f32, Add)
 	NumSub_f32 = Register_num_apply_func[float32](f32, Sub)
 	NumMul_f32 = Register_num_apply_func[float32](f32, Mul)
 	NumDiv_f32 = Register_num_apply_func[float32](f32, Div)
 	NumPow_f32 = Register_num_apply_func[float32](f32, Pow)
+
+	CumSum_f32 = Register_apply_cum_func[float32](f32, CumSum)
+	CumProd_f32 = Register_apply_cum_func[float32](f32, CumProd)
 }
 
 var Add_f64 Apply_Args_Fn[float64]
@@ -97,6 +107,12 @@ type Select_Apply_Args_Fn[T Number] func(c []T, a []T, b []T, pred []bool)
 type Num_Select_Apply_Args_Fn[T Number] func(c []T, a T, b []T, pred []bool)
 type Select_Apply_Args_Num_Fn[T Number] func(c []T, a []T, b T, pred []bool)
 type Apply_Args_Single_Fn[T Number, O Number] func(y []O, x []T)
+type Apply_Cum_Fn[T Number] func(x []T) T
+
+type Apply_Cum_Args_C[T Number] struct {
+	x   *T
+	len uint
+}
 
 type Apply_Args_C[T Number] struct {
 	a, b, c *T
@@ -186,6 +202,13 @@ const (
 	Select Op = "Select"
 )
 
+type Cum_Op string
+
+const (
+	CumSum  Cum_Op = "CumSum"
+	CumProd Cum_Op = "CumProd"
+)
+
 type Op1 string // for apply single
 
 const (
@@ -258,6 +281,18 @@ func Register_apply_func[T Number](t NumType, op Op) (apply_func Apply_Args_Fn[T
 			b:   unsafe.SliceData(b),
 			c:   unsafe.SliceData(c),
 			len: uint(len(c)),
+		})
+	}
+	return
+}
+func Register_apply_cum_func[T Number](t NumType, op Cum_Op) (apply_func Apply_Cum_Fn[T]) {
+	name := string(op) + "_" + string(t)
+	var c_func func(*Apply_Cum_Args_C[T]) T
+	purego.RegisterLibFunc(&c_func, lib, name)
+	apply_func = func(x []T) T {
+		return c_func(&Apply_Cum_Args_C[T]{
+			x:   unsafe.SliceData(x),
+			len: uint(len(x)),
 		})
 	}
 	return
