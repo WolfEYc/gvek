@@ -14,12 +14,36 @@ var Mul_f32 Apply_Args_Fn[float32]
 var Div_f32 Apply_Args_Fn[float32]
 var Pow_f32 Apply_Args_Fn[float32]
 
+var AddNum_f32 Apply_Args_Num_Fn[float32]
+var SubNum_f32 Apply_Args_Num_Fn[float32]
+var MulNum_f32 Apply_Args_Num_Fn[float32]
+var DivNum_f32 Apply_Args_Num_Fn[float32]
+var PowNum_f32 Apply_Args_Num_Fn[float32]
+
+var NumAdd_f32 Num_Apply_Args_Fn[float32]
+var NumSub_f32 Num_Apply_Args_Fn[float32]
+var NumMul_f32 Num_Apply_Args_Fn[float32]
+var NumDiv_f32 Num_Apply_Args_Fn[float32]
+var NumPow_f32 Num_Apply_Args_Fn[float32]
+
 func bind_f32_funcs() {
 	Add_f32 = Register_apply_func[float32](f32, Add)
 	Sub_f32 = Register_apply_func[float32](f32, Sub)
 	Mul_f32 = Register_apply_func[float32](f32, Mul)
 	Div_f32 = Register_apply_func[float32](f32, Div)
 	Pow_f32 = Register_apply_func[float32](f32, Pow)
+
+	AddNum_f32 = Register_apply_num_func[float32](f32, Add)
+	SubNum_f32 = Register_apply_num_func[float32](f32, Sub)
+	MulNum_f32 = Register_apply_num_func[float32](f32, Mul)
+	DivNum_f32 = Register_apply_num_func[float32](f32, Div)
+	PowNum_f32 = Register_apply_num_func[float32](f32, Pow)
+
+	NumAdd_f32 = Register_num_apply_func[float32](f32, Add)
+	NumSub_f32 = Register_num_apply_func[float32](f32, Sub)
+	NumMul_f32 = Register_num_apply_func[float32](f32, Mul)
+	NumDiv_f32 = Register_num_apply_func[float32](f32, Div)
+	NumPow_f32 = Register_num_apply_func[float32](f32, Pow)
 }
 
 var Add_f64 Apply_Args_Fn[float64]
