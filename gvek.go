@@ -33,10 +33,12 @@ var CumProd_f32 Apply_Cum_Fn[float32]
 
 var Ceil_f32 Apply_Args_Single_Fn[float32, float32]
 
+var Neq_f32 Apply_Args_Bool_Fn[float32]
 var Eq_f32 Apply_Args_Bool_Fn[float32]
 var Lt_f32 Apply_Args_Bool_Fn[float32]
 var Gt_f32 Apply_Args_Bool_Fn[float32]
 
+var NeqNum_f32 Apply_Args_Num_Bool_Fn[float32]
 var EqNum_f32 Apply_Args_Num_Bool_Fn[float32]
 var LtNum_f32 Apply_Args_Num_Bool_Fn[float32]
 var GtNum_f32 Apply_Args_Num_Bool_Fn[float32]
@@ -73,10 +75,12 @@ func bind_f32_funcs() {
 
 	Ceil_f32 = Register_apply_single_func[float32, float32](f32, f32, Ceil)
 
+	Neq_f32 = Register_apply_bool_func[float32](f32, Neq)
 	Eq_f32 = Register_apply_bool_func[float32](f32, Eq)
 	Lt_f32 = Register_apply_bool_func[float32](f32, Lt)
 	Gt_f32 = Register_apply_bool_func[float32](f32, Gt)
 
+	NeqNum_f32 = Register_apply_num_bool_func[float32](f32, Neq)
 	EqNum_f32 = Register_apply_num_bool_func[float32](f32, Eq)
 	LtNum_f32 = Register_apply_num_bool_func[float32](f32, Lt)
 	GtNum_f32 = Register_apply_num_bool_func[float32](f32, Gt)
