@@ -97,6 +97,8 @@ var Sub_f64 Apply_Args_Fn[float64]
 var Mul_f64 Apply_Args_Fn[float64]
 var Div_f64 Apply_Args_Fn[float64]
 var Pow_f64 Apply_Args_Fn[float64]
+var Min_f64 Apply_Args_Fn[float64]
+var Max_f64 Apply_Args_Fn[float64]
 
 var AddNum_f64 Apply_Args_Num_Fn[float64]
 var SubNum_f64 Apply_Args_Num_Fn[float64]
@@ -112,6 +114,8 @@ func bind_f64_funcs() {
 	Mul_f64 = Register_apply_func[float64](f64, Mul)
 	Div_f64 = Register_apply_func[float64](f64, Div)
 	Pow_f64 = Register_apply_func[float64](f64, Pow)
+	Min_f64 = Register_apply_func[float64](f64, Min)
+	Max_f64 = Register_apply_func[float64](f64, Max)
 
 	AddNum_f64 = Register_apply_num_func[float64](f64, Add)
 	SubNum_f64 = Register_apply_num_func[float64](f64, Sub)
