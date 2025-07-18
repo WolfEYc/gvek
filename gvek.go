@@ -66,12 +66,28 @@ var Mul_f64 Apply_Args_Fn[float64]
 var Div_f64 Apply_Args_Fn[float64]
 var Pow_f64 Apply_Args_Fn[float64]
 
+var AddNum_f64 Apply_Args_Num_Fn[float64]
+var SubNum_f64 Apply_Args_Num_Fn[float64]
+var MulNum_f64 Apply_Args_Num_Fn[float64]
+var DivNum_f64 Apply_Args_Num_Fn[float64]
+var PowNum_f64 Apply_Args_Num_Fn[float64]
+var MinNum_f64 Apply_Args_Num_Fn[float64]
+var MaxNum_f64 Apply_Args_Num_Fn[float64]
+
 func bind_f64_funcs() {
 	Add_f64 = Register_apply_func[float64](f64, Add)
 	Sub_f64 = Register_apply_func[float64](f64, Sub)
 	Mul_f64 = Register_apply_func[float64](f64, Mul)
 	Div_f64 = Register_apply_func[float64](f64, Div)
 	Pow_f64 = Register_apply_func[float64](f64, Pow)
+
+	AddNum_f64 = Register_apply_num_func[float64](f64, Add)
+	SubNum_f64 = Register_apply_num_func[float64](f64, Sub)
+	MulNum_f64 = Register_apply_num_func[float64](f64, Mul)
+	DivNum_f64 = Register_apply_num_func[float64](f64, Div)
+	PowNum_f64 = Register_apply_num_func[float64](f64, Pow)
+	MinNum_f64 = Register_apply_num_func[float64](f64, Min)
+	MaxNum_f64 = Register_apply_num_func[float64](f64, Max)
 }
 
 func As_bytes[T Number](nums []T) (byte_slice []byte) {
