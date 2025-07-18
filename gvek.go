@@ -148,12 +148,12 @@ func bind_byte_funcs() {
 type Apply_Args_Fn[T Number] func(c []T, a []T, b []T)
 type Num_Apply_Args_Fn[T Number] func(c []T, a T, b []T)
 type Apply_Args_Num_Fn[T Number] func(c []T, a []T, b T)
-type Apply_Args_Bool_Fn[T Number] func(c []bool, a []T, b []T)
-type Apply_Args_Num_Bool_Fn[T Number] func(c []bool, a []T, b T)
-type Num_Apply_Args_Bool_Fn[T Number] func(c []bool, a T, b []T)
-type Select_Apply_Args_Fn[T Number] func(c []T, a []T, b []T, pred []bool)
-type Select_Apply_Args_Num_Fn[T Number] func(c []T, a []T, b T, pred []bool)
-type Num_Select_Apply_Args_Fn[T Number] func(c []T, a T, b []T, pred []bool)
+type Apply_Args_Bool_Fn[T Number] func(c []byte, a []T, b []T)
+type Apply_Args_Num_Bool_Fn[T Number] func(c []byte, a []T, b T)
+type Num_Apply_Args_Bool_Fn[T Number] func(c []byte, a T, b []T)
+type Select_Apply_Args_Fn[T Number] func(c []T, a []T, b []T, pred []byte)
+type Select_Apply_Args_Num_Fn[T Number] func(c []T, a []T, b T, pred []byte)
+type Num_Select_Apply_Args_Fn[T Number] func(c []T, a T, b []T, pred []byte)
 type Apply_Args_Single_Fn[T Number, O Number] func(y []O, x []T)
 type Apply_Cum_Fn[T Number] func(x []T) T
 
@@ -182,26 +182,26 @@ type Apply_Args_Num_C[T Number] struct {
 
 type Apply_Args_Bool_C[T Number] struct {
 	a, b *T
-	c    *bool
+	c    *byte
 	len  uint
 }
 
 type Apply_Args_Num_Bool_C[T Number] struct {
 	a *T
 	b T
-	c *bool
+	c *byte
 }
 
 type Num_Apply_Args_Bool_C[T Number] struct {
 	a   T
 	b   *T
-	c   *bool
+	c   *byte
 	len uint
 }
 
 type Select_Apply_Args_C[T Number] struct {
 	a, b *T
-	pred *bool
+	pred *byte
 	c    *T
 	len  uint
 }
@@ -209,7 +209,7 @@ type Select_Apply_Args_C[T Number] struct {
 type Num_Select_Apply_Args_C[T Number] struct {
 	a    T
 	b    *T
-	pred *bool
+	pred *byte
 	c    *T
 	len  uint
 }
@@ -217,7 +217,7 @@ type Num_Select_Apply_Args_C[T Number] struct {
 type Select_Apply_Args_Num_C[T Number] struct {
 	a    *T
 	b    T
-	pred *bool
+	pred *byte
 	c    *T
 	len  uint
 }
@@ -396,8 +396,8 @@ func Register_apply_bool_func[T Number](t NumType, op Bool_Op) (apply_func Apply
 	name := string(op) + "_" + string(t)
 	var c_func func(*Apply_Args_Bool_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
-	apply_func = func(c []bool, a, b []T) {
-		if len(a) != len(b) || len(b) != len(c) {
+	apply_func = func(c []byte, a, b []T) {
+		if len(a) != len(b) || len(b) != len(c)*8 {
 			panic("Apply_Args_Bool: slice lengths differ")
 		}
 		c_func(&Apply_Args_Bool_C[T]{
@@ -414,8 +414,8 @@ func Register_apply_num_bool_func[T Number](t NumType, op Bool_Op) (apply_func A
 	name := string(op) + "_" + string(t) + "_Num"
 	var c_func func(*Apply_Args_Num_Bool_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
-	apply_func = func(c []bool, a []T, b T) {
-		if len(a) != len(c) {
+	apply_func = func(c []byte, a []T, b T) {
+		if len(a) != len(c)*8 {
 			panic("Apply_Args_Num_Bool: slice lengths differ")
 		}
 		c_func(&Apply_Args_Num_Bool_C[T]{
@@ -431,8 +431,8 @@ func Register_num_apply_bool_func[T Number](t NumType, op Bool_Op) (apply_func N
 	name := "Num_" + string(op) + "_" + string(t)
 	var c_func func(*Num_Apply_Args_Bool_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
-	apply_func = func(c []bool, a T, b []T) {
-		if len(b) != len(c) {
+	apply_func = func(c []byte, a T, b []T) {
+		if len(b) != len(c)*8 {
 			panic("Num_Apply_Args_Bool: slice lengths differ")
 		}
 		c_func(&Num_Apply_Args_Bool_C[T]{
@@ -449,8 +449,8 @@ func Register_select_apply_func[T Number](t NumType) (apply_func Select_Apply_Ar
 	name := "Select_" + string(t)
 	var c_func func(*Select_Apply_Args_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
-	apply_func = func(c, a, b []T, pred []bool) {
-		if len(a) != len(b) || len(b) != len(pred) || len(pred) != len(c) {
+	apply_func = func(c, a, b []T, pred []byte) {
+		if len(a) != len(b) || len(b) != len(c) || len(pred)*8 != len(c) {
 			panic("Select_Apply_Args: slice lengths differ")
 		}
 		c_func(&Select_Apply_Args_C[T]{
@@ -468,8 +468,8 @@ func Register_num_select_apply_func[T Number](t NumType) (apply_func Num_Select_
 	name := "Num_Select_" + string(t)
 	var c_func func(*Num_Select_Apply_Args_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
-	apply_func = func(c []T, a T, b []T, pred []bool) {
-		if len(b) != len(pred) || len(pred) != len(c) {
+	apply_func = func(c []T, a T, b []T, pred []byte) {
+		if len(b) != len(pred) || len(pred) != len(c)*8 {
 			panic("Num_Select_Apply_Args: slice lengths differ")
 		}
 		c_func(&Num_Select_Apply_Args_C[T]{
@@ -487,8 +487,8 @@ func Register_select_apply_num_func[T Number](t NumType) (apply_func Select_Appl
 	name := "Select_" + string(t) + "_Num"
 	var c_func func(*Select_Apply_Args_Num_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
-	apply_func = func(c, a []T, b T, pred []bool) {
-		if len(a) != len(pred) || len(pred) != len(c) {
+	apply_func = func(c, a []T, b T, pred []byte) {
+		if len(a) != len(pred) || len(pred) != len(c)*8 {
 			panic("Select_Apply_Args_Num: slice lengths differ")
 		}
 		c_func(&Select_Apply_Args_Num_C[T]{
