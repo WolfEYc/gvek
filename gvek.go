@@ -41,6 +41,8 @@ var Select_f32 Select_Apply_Args_Fn[float32]
 var SelectNum_f32 Select_Apply_Args_Num_Fn[float32]
 var NumSelect_f32 Num_Select_Apply_Args_Fn[float32]
 
+var f32_to_f64 Apply_Args_Single_Fn[float32, float64]
+
 func bind_f32_funcs() {
 	Add_f32 = Register_apply_func[float32](f32, Add)
 	Sub_f32 = Register_apply_func[float32](f32, Sub)
@@ -74,6 +76,8 @@ func bind_f32_funcs() {
 	Select_f32 = Register_select_apply_func[float32](f32)
 	SelectNum_f32 = Register_select_apply_num_func[float32](f32)
 	NumSelect_f32 = Register_num_select_apply_func[float32](f32)
+
+	f32_to_f64 = Register_apply_single_func[float32, float64](f32, f64, Cast)
 }
 
 var Add_f64 Apply_Args_Fn[float64]
