@@ -33,6 +33,14 @@ var CumProd_f32 Apply_Cum_Fn[float32]
 
 var Ceil_f32 Apply_Args_Single_Fn[float32, float32]
 
+var EqNum_f32 Apply_Args_Num_Bool_Fn[float32]
+var LtNum_f32 Apply_Args_Num_Bool_Fn[float32]
+var GtNum_f32 Apply_Args_Num_Bool_Fn[float32]
+
+var Select_f32 Select_Apply_Args_Fn[float32]
+var SelectNum_f32 Select_Apply_Args_Num_Fn[float32]
+var NumSelect_f32 Num_Select_Apply_Args_Fn[float32]
+
 func bind_f32_funcs() {
 	Add_f32 = Register_apply_func[float32](f32, Add)
 	Sub_f32 = Register_apply_func[float32](f32, Sub)
@@ -58,6 +66,14 @@ func bind_f32_funcs() {
 	CumProd_f32 = Register_apply_cum_func[float32](f32, CumProd)
 
 	Ceil_f32 = Register_apply_single_func[float32, float32](f32, f32, Ceil)
+
+	EqNum_f32 = Register_apply_num_bool_func[float32](f32, Eq)
+	LtNum_f32 = Register_apply_num_bool_func[float32](f32, Lt)
+	GtNum_f32 = Register_apply_num_bool_func[float32](f32, Gt)
+
+	Select_f32 = Register_select_apply_func[float32](f32)
+	SelectNum_f32 = Register_select_apply_num_func[float32](f32)
+	NumSelect_f32 = Register_num_select_apply_func[float32](f32)
 }
 
 var Add_f64 Apply_Args_Fn[float64]
@@ -124,8 +140,8 @@ type Apply_Args_Bool_Fn[T Number] func(c []bool, a []T, b []T)
 type Apply_Args_Num_Bool_Fn[T Number] func(c []bool, a []T, b T)
 type Num_Apply_Args_Bool_Fn[T Number] func(c []bool, a T, b []T)
 type Select_Apply_Args_Fn[T Number] func(c []T, a []T, b []T, pred []bool)
-type Num_Select_Apply_Args_Fn[T Number] func(c []T, a T, b []T, pred []bool)
 type Select_Apply_Args_Num_Fn[T Number] func(c []T, a []T, b T, pred []bool)
+type Num_Select_Apply_Args_Fn[T Number] func(c []T, a T, b []T, pred []bool)
 type Apply_Args_Single_Fn[T Number, O Number] func(y []O, x []T)
 type Apply_Cum_Fn[T Number] func(x []T) T
 
@@ -232,19 +248,30 @@ const (
 type Op1 string // for apply single
 
 const (
-	Ceil  = "Ceil"
-	Floor = "Floor"
-	Round = "Round"
-	Sqrt  = "Sqrt"
-	Not   = "Not"
-	Neg   = "Neg"
-	Abs   = "Abs"
-	Ln    = "Ln"
-	Log2  = "Log2"
-	Log10 = "Log10"
-	Exp   = "Exp"
-	Exp2  = "Exp2"
-	Cast  = "Cast"
+	Ceil  Op1 = "Ceil"
+	Floor Op1 = "Floor"
+	Round Op1 = "Round"
+	Sqrt  Op1 = "Sqrt"
+	Not   Op1 = "Not"
+	Neg   Op1 = "Neg"
+	Abs   Op1 = "Abs"
+	Ln    Op1 = "Ln"
+	Log2  Op1 = "Log2"
+	Log10 Op1 = "Log10"
+	Exp   Op1 = "Exp"
+	Exp2  Op1 = "Exp2"
+	Cast  Op1 = "Cast"
+)
+
+type Bool_Op string
+
+const (
+	Gt  Bool_Op = "Gt"
+	Gte Bool_Op = "Gte"
+	Lt  Bool_Op = "Lt"
+	Lte Bool_Op = "Lte"
+	Eq  Bool_Op = "Eq"
+	Neq Bool_Op = "Neq"
 )
 
 type NumType string
@@ -353,7 +380,7 @@ func Register_apply_num_func[T Number](t NumType, op Op) (apply_func Apply_Args_
 	return
 }
 
-func Register_apply_bool_func[T Number](t NumType, op Op) (apply_func Apply_Args_Bool_Fn[T]) {
+func Register_apply_bool_func[T Number](t NumType, op Bool_Op) (apply_func Apply_Args_Bool_Fn[T]) {
 	name := string(op) + "_" + string(t)
 	var c_func func(*Apply_Args_Bool_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
@@ -371,7 +398,7 @@ func Register_apply_bool_func[T Number](t NumType, op Op) (apply_func Apply_Args
 	return
 }
 
-func Register_apply_num_bool_func[T Number](t NumType, op Op) (apply_func Apply_Args_Num_Bool_Fn[T]) {
+func Register_apply_num_bool_func[T Number](t NumType, op Bool_Op) (apply_func Apply_Args_Num_Bool_Fn[T]) {
 	name := string(op) + "_" + string(t) + "_Num"
 	var c_func func(*Apply_Args_Num_Bool_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
@@ -388,7 +415,7 @@ func Register_apply_num_bool_func[T Number](t NumType, op Op) (apply_func Apply_
 	return
 }
 
-func Register_num_apply_bool_func[T Number](t NumType, op Op) (apply_func Num_Apply_Args_Bool_Fn[T]) {
+func Register_num_apply_bool_func[T Number](t NumType, op Bool_Op) (apply_func Num_Apply_Args_Bool_Fn[T]) {
 	name := "Num_" + string(op) + "_" + string(t)
 	var c_func func(*Num_Apply_Args_Bool_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
