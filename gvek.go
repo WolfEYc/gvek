@@ -49,6 +49,8 @@ var NumSelect_f32 Num_Select_Apply_Args_Fn[float32]
 
 var F32_to_f64 Apply_Args_Single_Fn[float32, float64]
 
+var Set_f32 Set_Fn[float32]
+
 func bind_f32_funcs() {
 	Add_f32 = Register_apply_func[float32](f32, Add)
 	Sub_f32 = Register_apply_func[float32](f32, Sub)
@@ -90,6 +92,8 @@ func bind_f32_funcs() {
 	NumSelect_f32 = Register_num_select_apply_func[float32](f32)
 
 	F32_to_f64 = Register_apply_single_func[float32, float64](f32, f64, Cast)
+
+	Set_f32 = Register_set_func[float32](f32)
 }
 
 var Add_f64 Apply_Args_Fn[float64]
@@ -164,7 +168,13 @@ type Select_Apply_Args_Num_Fn[T Number] func(c []T, a []T, b T, pred []byte)
 type Num_Select_Apply_Args_Fn[T Number] func(c []T, a T, b []T, pred []byte)
 type Apply_Args_Single_Fn[T Number, O Number] func(y []O, x []T)
 type Apply_Cum_Fn[T Number] func(x []T) T
+type Set_Fn[T Number] func(dst []T, src T)
 
+type Set_Args_C[T Number] struct {
+	x   *T
+	len uint
+	y   T
+}
 type Apply_Cum_Args_C[T Number] struct {
 	x   *T
 	len uint
@@ -360,6 +370,19 @@ func Register_apply_cum_func[T Number](t NumType, op Cum_Op) (apply_func Apply_C
 		return c_func(&Apply_Cum_Args_C[T]{
 			x:   unsafe.SliceData(x),
 			len: uint(len(x)),
+		})
+	}
+	return
+}
+func Register_set_func[T Number](t NumType) (set_func Set_Fn[T]) {
+	name := "Set_" + string(t)
+	var c_func func(*Set_Args_C[T])
+	purego.RegisterLibFunc(&c_func, lib, name)
+	set_func = func(x []T, y T) {
+		c_func(&Set_Args_C[T]{
+			x:   unsafe.SliceData(x),
+			len: uint(len(x)),
+			y:   y,
 		})
 	}
 	return
