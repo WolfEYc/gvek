@@ -28,8 +28,8 @@ var NumMul_f32 Num_Apply_Args_Fn[float32]
 var NumDiv_f32 Num_Apply_Args_Fn[float32]
 var NumPow_f32 Num_Apply_Args_Fn[float32]
 
-var CumSum_f32 Apply_Cum_Fn[float32]
-var CumProd_f32 Apply_Cum_Fn[float32]
+var Sum_f32 Apply_Sum_Fn[float32]
+var Prod_f32 Apply_Sum_Fn[float32]
 
 var Ceil_f32 Apply_Args_Single_Fn[float32, float32]
 
@@ -72,8 +72,8 @@ func bind_f32_funcs() {
 	NumDiv_f32 = Register_num_apply_func[float32](f32, Div)
 	NumPow_f32 = Register_num_apply_func[float32](f32, Pow)
 
-	CumSum_f32 = Register_apply_cum_func[float32](f32, CumSum)
-	CumProd_f32 = Register_apply_cum_func[float32](f32, CumProd)
+	Sum_f32 = Register_apply_sum_func[float32](f32, Sum)
+	Prod_f32 = Register_apply_sum_func[float32](f32, Prod)
 
 	Ceil_f32 = Register_apply_single_func[float32, float32](f32, f32, Ceil)
 
@@ -171,7 +171,7 @@ type Select_Apply_Args_Fn[T Number] func(c []T, a []T, b []T, pred []byte)
 type Select_Apply_Args_Num_Fn[T Number] func(c []T, a []T, b T, pred []byte)
 type Num_Select_Apply_Args_Fn[T Number] func(c []T, a T, b []T, pred []byte)
 type Apply_Args_Single_Fn[T Number, O Number] func(y []O, x []T)
-type Apply_Cum_Fn[T Number] func(x []T) T
+type Apply_Sum_Fn[T Number] func(x []T) T
 type Set_Fn[T Number] func(dst []T, src T)
 
 type Set_Args_C[T Number] struct {
@@ -179,7 +179,7 @@ type Set_Args_C[T Number] struct {
 	len uint
 	y   T
 }
-type Apply_Cum_Args_C[T Number] struct {
+type Apply_Sum_Args_C[T Number] struct {
 	x   *T
 	len uint
 }
@@ -272,11 +272,11 @@ const (
 	Select Op = "Select"
 )
 
-type Cum_Op string
+type Sum_Op string
 
 const (
-	CumSum  Cum_Op = "CumSum"
-	CumProd Cum_Op = "CumProd"
+	Sum  Sum_Op = "Sum"
+	Prod Sum_Op = "Prod"
 )
 
 type Op1 string // for apply single
@@ -366,12 +366,12 @@ func Register_apply_func[T Number](t NumType, op Op) (apply_func Apply_Args_Fn[T
 	}
 	return
 }
-func Register_apply_cum_func[T Number](t NumType, op Cum_Op) (apply_func Apply_Cum_Fn[T]) {
+func Register_apply_sum_func[T Number](t NumType, op Sum_Op) (apply_func Apply_Sum_Fn[T]) {
 	name := string(op) + "_" + string(t)
-	var c_func func(*Apply_Cum_Args_C[T]) T
+	var c_func func(*Apply_Sum_Args_C[T]) T
 	purego.RegisterLibFunc(&c_func, lib, name)
 	apply_func = func(x []T) T {
-		return c_func(&Apply_Cum_Args_C[T]{
+		return c_func(&Apply_Sum_Args_C[T]{
 			x:   unsafe.SliceData(x),
 			len: uint(len(x)),
 		})
