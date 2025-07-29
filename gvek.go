@@ -410,7 +410,7 @@ func Register_num_apply_func[T Number](t NumType, op Op) (apply_func Num_Apply_A
 }
 
 func Register_apply_num_func[T Number](t NumType, op Op) (apply_func Apply_Args_Num_Fn[T]) {
-	name := string(op) + "_" + string(t)
+	name := string(op) + "_" + string(t) + "_Num"
 	var c_func func(*Apply_Args_Num_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
 	apply_func = func(c, a []T, b T) {
