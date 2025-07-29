@@ -561,7 +561,7 @@ var dylib_ext_map = map[string]string{
 	"linux":  "so",
 }
 
-func Init() {
+func init() {
 	dylib_ext, ok := dylib_ext_map[runtime.GOOS]
 	if !ok {
 		panic(fmt.Errorf("os: %s is not supported", runtime.GOOS))

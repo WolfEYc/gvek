@@ -1,17 +1,10 @@
 package gvek_test
 
 import (
-	"os"
 	"testing"
 
 	"github.com/WolfEYc/gvek"
 )
-
-func TestMain(m *testing.M) {
-	gvek.Init()
-	code := m.Run()
-	os.Exit(code)
-}
 
 func TestAddf32(t *testing.T) {
 	a_slice := []float32{2, 3, 8, 9, 8, 7, 3, 5, 12}
