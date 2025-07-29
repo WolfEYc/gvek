@@ -35,3 +35,23 @@ func TestAddf32(t *testing.T) {
 		}
 	}
 }
+
+func TestSubf32(t *testing.T) {
+	a_slice := []float32{2, 3, 8, 9, 8, 7, 3, 5, 12}
+	scratch := make([]float32, len(a_slice))
+	scratch[0] = a_slice[0]
+	gvek.Sub_f32(scratch[1:], a_slice[1:], a_slice[:len(a_slice)-1])
+
+	c_expect := []float32{2, 1, 5, 1, -1, -1, -4, 2, 7}
+	for i, expected := range c_expect {
+		actual := scratch[i]
+		diff := actual - expected
+		if diff < 0 {
+			diff = -diff
+		}
+		if diff > 0.01 {
+			t.Errorf("i=%d, expected=%.2f, actual=%.2f", i, expected, actual)
+			t.Logf("actual=%v", scratch)
+		}
+	}
+}
