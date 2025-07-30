@@ -432,7 +432,7 @@ func Register_apply_bool_func[T Number](t NumType, op Bool_Op) (apply_func Apply
 	var c_func func(*Apply_Args_Bool_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
 	apply_func = func(c []byte, a, b []T) {
-		if len(a) != len(b) || len(b) <= len(c)*8 {
+		if len(a) != len(b) || len(b) > len(c)*8 {
 			panic("Apply_Args_Bool: slice lengths differ")
 		}
 		c_func(&Apply_Args_Bool_C[T]{
@@ -450,7 +450,7 @@ func Register_apply_num_bool_func[T Number](t NumType, op Bool_Op) (apply_func A
 	var c_func func(*Apply_Args_Num_Bool_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
 	apply_func = func(c []byte, a []T, b T) {
-		if len(a) <= len(c)*8 {
+		if len(a) > len(c)*8 {
 			panic("Apply_Args_Num_Bool: slice lengths differ")
 		}
 		c_func(&Apply_Args_Num_Bool_C[T]{
@@ -467,7 +467,7 @@ func Register_num_apply_bool_func[T Number](t NumType, op Bool_Op) (apply_func N
 	var c_func func(*Num_Apply_Args_Bool_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
 	apply_func = func(c []byte, a T, b []T) {
-		if len(b) <= len(c)*8 {
+		if len(b) > len(c)*8 {
 			panic("Num_Apply_Args_Bool: slice lengths differ")
 		}
 		c_func(&Num_Apply_Args_Bool_C[T]{
@@ -485,7 +485,7 @@ func Register_select_apply_func[T Number](t NumType) (apply_func Select_Apply_Ar
 	var c_func func(*Select_Apply_Args_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
 	apply_func = func(c, a, b []T, pred []byte) {
-		if len(a) != len(b) || len(b) != len(c) || len(c) <= len(pred)*8 {
+		if len(a) != len(b) || len(b) != len(c) || len(c) > len(pred)*8 {
 			panic("Select_Apply_Args: slice lengths differ")
 		}
 		c_func(&Select_Apply_Args_C[T]{
@@ -504,7 +504,7 @@ func Register_num_select_apply_func[T Number](t NumType) (apply_func Num_Select_
 	var c_func func(*Num_Select_Apply_Args_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
 	apply_func = func(c []T, a T, b []T, pred []byte) {
-		if len(b) != len(pred) || len(c) <= len(pred)*8 {
+		if len(b) != len(pred) || len(c) > len(pred)*8 {
 			panic("Num_Select_Apply_Args: slice lengths differ")
 		}
 		c_func(&Num_Select_Apply_Args_C[T]{
@@ -523,7 +523,7 @@ func Register_select_apply_num_func[T Number](t NumType) (apply_func Select_Appl
 	var c_func func(*Select_Apply_Args_Num_C[T])
 	purego.RegisterLibFunc(&c_func, lib, name)
 	apply_func = func(c, a []T, b T, pred []byte) {
-		if len(a) != len(pred) || len(c) <= len(pred)*8 {
+		if len(a) != len(pred) || len(c) > len(pred)*8 {
 			panic("Select_Apply_Args_Num: slice lengths differ")
 		}
 		c_func(&Select_Apply_Args_Num_C[T]{
