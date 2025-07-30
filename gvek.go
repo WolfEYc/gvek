@@ -209,9 +209,10 @@ type Apply_Args_Bool_C[T Number] struct {
 }
 
 type Apply_Args_Num_Bool_C[T Number] struct {
-	a *T
-	b T
-	c *byte
+	a   *T
+	b   T
+	c   *byte
+	len uint
 }
 
 type Num_Apply_Args_Bool_C[T Number] struct {
@@ -439,7 +440,7 @@ func Register_apply_bool_func[T Number](t NumType, op Bool_Op) (apply_func Apply
 			a:   unsafe.SliceData(a),
 			b:   unsafe.SliceData(b),
 			c:   unsafe.SliceData(c),
-			len: uint(len(c)),
+			len: uint(len(a)),
 		})
 	}
 	return
@@ -454,9 +455,10 @@ func Register_apply_num_bool_func[T Number](t NumType, op Bool_Op) (apply_func A
 			panic("Apply_Args_Num_Bool: slice lengths differ")
 		}
 		c_func(&Apply_Args_Num_Bool_C[T]{
-			a: unsafe.SliceData(a),
-			b: b,
-			c: unsafe.SliceData(c),
+			a:   unsafe.SliceData(a),
+			b:   b,
+			c:   unsafe.SliceData(c),
+			len: uint(len(a)),
 		})
 	}
 	return
@@ -474,7 +476,7 @@ func Register_num_apply_bool_func[T Number](t NumType, op Bool_Op) (apply_func N
 			a:   a,
 			b:   unsafe.SliceData(b),
 			c:   unsafe.SliceData(c),
-			len: uint(len(c)),
+			len: uint(len(b)),
 		})
 	}
 	return
