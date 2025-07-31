@@ -2,6 +2,7 @@ package gvek
 
 import (
 	"fmt"
+	"log"
 	"runtime"
 	"unsafe"
 
@@ -569,6 +570,7 @@ func init() {
 		panic(fmt.Errorf("os: %s is not supported", runtime.GOOS))
 	}
 	dylib_name := "libzvek." + dylib_ext
+	log.Printf("loading zvek: %s", dylib_name)
 	var err error
 	lib, err = purego.Dlopen(dylib_name, purego.RTLD_LAZY)
 	if err != nil {
