@@ -176,8 +176,8 @@ type Set_Fn[T Number] func(dst []T, src T)
 
 type Set_Args_C[T Number] struct {
 	x   *T
-	len uint
 	y   T
+	len uint
 }
 type Apply_Sum_Args_C[T Number] struct {
 	x   *T
@@ -386,8 +386,8 @@ func Register_set_func[T Number](t NumType) (set_func Set_Fn[T]) {
 	set_func = func(x []T, y T) {
 		c_func(&Set_Args_C[T]{
 			x:   unsafe.SliceData(x),
-			len: uint(len(x)),
 			y:   y,
+			len: uint(len(x)),
 		})
 	}
 	return
